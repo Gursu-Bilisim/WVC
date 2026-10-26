@@ -84,9 +84,15 @@ vanadium)
     # third_party/android_sdk/public/build-tools/<surum>/apksigner)
     APKSIGNER=${APKSIGNER:-$(command -v apksigner || true)}
     if [ -n "$APKSIGNER" ]; then
-        "$APKSIGNER" verify --print-certs "$FILE" 2>/dev/null \
-            | grep -q '40342a299f0c62287330134005e5d5df8901ec3cd6c1c1b2e884396ca6332a88' \
-            || die "APK WVC anahtariyla imzali degil."
+        [ -x "$APKSIGNER" ] || die "apksigner bulunamadi: $APKSIGNER"
+        # Cikti once degiskene alinir: grep -q erken cikinca apksigner SIGPIPE
+        # alip pipefail ile basarili denetimi hataya cevirebiliyor.
+        CERTS=$("$APKSIGNER" verify --print-certs "$FILE" 2>&1) \
+            || { printf '%s\n' "$CERTS" >&2; die "apksigner verify basarisiz."; }
+        case $CERTS in
+        *40342a299f0c62287330134005e5d5df8901ec3cd6c1c1b2e884396ca6332a88*) say "Imza: WVC sertifikasi." ;;
+        *) printf '%s\n' "$CERTS" >&2; die "APK WVC anahtariyla imzali degil." ;;
+        esac
     else
         say "apksigner yok, imza denetimi atlandi (test notundaki sertifika degerine bakin)."
     fi
