@@ -1,0 +1,4 @@
+* text=auto
+module/** -text
+tools/** -text
+vanadium/** -text
