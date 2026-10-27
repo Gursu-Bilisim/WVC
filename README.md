@@ -37,7 +37,7 @@ Installer, Action and status messages are in Turkish when the system language is
 
 ## Status and the Action button
 
-After every boot WVC writes a status report to `/data/adb/modules/WVC/status.txt` and a short summary to the module description. The Action button in the root manager shows the same report: root manager, Zygisk, LSPosed and AnyWebView versions, the AnyWebView hook log, every provider in the system list with its state, and the WVC packages.
+After every boot WVC writes a status report to `/data/adb/modules/WVC/status.txt` and a short summary to the module description. The Action button in the root manager shows the same report: root manager, Zygisk, LSPosed and AnyWebView versions, the AnyWebView hook log, every provider in the system list with its state, and the WVC packages. It then checks for new versions of the installed WebViews and installs them (see [Updates of the installed WebViews](#updates-of-the-installed-webviews)).
 
 If a WVC package shows `Version code too low`, its version is below the ROM's minimum WebView version, which Android takes from the factory (system partition) versions of the listed providers. The Action button then copies that package into the module as a system app (`/product/app`) and removes its `/data` copy. After a reboot the system copy counts as a factory version and lowers the minimum. On KernelSU and APatch this needs an active metamodule. This action has not yet been tested from within the module; the same procedure done by hand worked on a POCO F1 with BaikalOS 16.3 (user build).
 
@@ -47,14 +47,15 @@ If a WVC package shows `Version code too low`, its version is below the ROM's mi
 - WebViews moved to the system with the Action button are removed together with the module.
 - WebViews that WVC installed to `/data` stay installed when the module is removed.
 - Another WebView Changer module installed under a different ID stops the installation. Remove it and reboot first: its uninstall script removes the packages it installed on the next boot, which could include packages that WVC installs.
+- The update check needs network access. Without it WVC retries every hour.
 - An older WVC (Lordify-based, same ID) is replaced. After a reboot the stock WebView and Chrome come back. A GrapheneOS Vanadium installed by the old version stays in `/data`; the installer shows the `pm uninstall` command for it.
 
 ## Tested devices
 
 | Device | ROM | Root | Result |
 |---|---|---|---|
-| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: install, update over 9.0, 32-bit APK skipped, Vanadium valid and active; AOSmium valid through AnyWebView |
-| Samsung Galaxy A8 2018 (SM-A530F) | One UI port of the Galaxy S23 FE firmware (XROM V16.1, Android 16) | Magisk with built-in Zygisk, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: install; Google WebView, Cromite, Vanadium and AOSmium valid; Vanadium active |
+| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: install, update over 9.0, 32-bit APK skipped, Vanadium valid and active; AOSmium valid through AnyWebView. WVC 9.2: certificate checks of the downloader, update check with the Action button |
+| Samsung Galaxy A8 2018 (SM-A530F) | One UI port of the Galaxy S23 FE firmware (XROM V16.1, Android 16) | Magisk with built-in Zygisk, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: install; Google WebView, Cromite, Vanadium and AOSmium valid; Vanadium active. WVC 9.2: update check at boot with notification, Cromite 148 to 153 installed with the Action button |
 
 The Vanadium fork was also tested without WVC on a Mi Note 10 Pro (LineageOS 23.2) and a Pixel 4a 5G (LineageOS 24, Android 17). Test notes for every release are attached to the release and kept in [test-notes](test-notes).
 
@@ -74,7 +75,19 @@ Source: the [Gursu-Bilisim/Vanadium](https://github.com/Gursu-Bilisim/Vanadium) 
 
 ## Updates
 
-New versions are published as [GitHub releases](https://github.com/Gursu-Bilisim/WVC/releases). The module's `updateJson` points to [update.json](update.json), so Magisk, KernelSU and APatch show module updates in their module list.
+New versions of WVC are published as [GitHub releases](https://github.com/Gursu-Bilisim/WVC/releases). The module's `updateJson` points to [update.json](update.json), so Magisk, KernelSU and APatch show module updates in their module list.
+
+### Updates of the installed WebViews
+
+Once a day WVC checks for new versions of the packages that are installed on the device: the WVC Vanadium fork, AOSmium, Cromite and AnyWebView. The first check runs at the first boot after installing WVC. Cromite is recognised by its signing certificate (SHA-256 `633fa41d8211d6d0916a819b89668c6de92e64232da67f9d16fd81c3b7e923ff`), so a ROM's own AOSP WebView, which uses the same package name, is not mistaken for it. The check reads the release lists of the [WVC](https://github.com/Gursu-Bilisim/WVC/releases), [AOSmium](https://codeberg.org/AXP-OS/app_aosmium/releases), [Cromite](https://github.com/uazo/cromite/releases) and [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) repositories through the GitHub and Codeberg APIs.
+
+When it finds a new version, WVC writes it to the module description and posts one notification for that set of versions. The notification comes from the Shell app (`com.android.shell`), because Android drops notifications posted as root. Tapping it opens nothing: Android does not let the shell create a tap action for it. Turning off Shell notifications in the system settings also turns off these notifications.
+
+The Action button checks again and installs the new versions. For each package it downloads the APK to `/data/local/tmp/wvc-dl`, checks the size, the SHA-256 published by GitHub or AOSmium's `.sha512` file, the package name and the ABIs, installs it with `pm install`, and deletes the download. Android installs an update only if it is signed with the same key as the installed package. Cromite's `arm64_SystemWebView.apk` is about 290 MB, and the Action screen shows no progress while it downloads. After an AnyWebView update, reboot.
+
+Downloads use `wvc-fetch.dex`, a small Java program that runs with `app_process` and uses Android's own HTTPS implementation: the server certificate is checked against the system CA store, and only `https` addresses and redirects are accepted. The `wget` in the root managers' busybox does not check certificates, so WVC does not use it. Source and build script: [fetch/](fetch).
+
+To turn the check off, create `/data/adb/modules/WVC/disable_update_check` (for example `touch /data/adb/modules/WVC/disable_update_check` in a root shell). The file is kept when WVC is updated. The Action button then only shows the status.
 
 ## Diagnostic tools
 
@@ -93,4 +106,4 @@ New versions are published as [GitHub releases](https://github.com/Gursu-Bilisim
 
 ## License
 
-The module, the tools and the build script are licensed under the GNU General Public License v3.0 or later ([LICENSE](LICENSE)). The Vanadium patches keep their own license (GPL-2.0-only, see the fork).
+The module, the tools, the downloader and the build script are licensed under the GNU General Public License v3.0 or later ([LICENSE](LICENSE)). The Vanadium patches keep their own license (GPL-2.0-only, see the fork).

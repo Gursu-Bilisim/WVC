@@ -2,3 +2,4 @@
 module/** -text
 tools/** -text
 vanadium/** -text
+fetch/** -text

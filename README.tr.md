@@ -37,7 +37,7 @@ Kurulum, Eylem ve durum mesajları sistem dili Türkçe ise Türkçe, değilse �
 
 ## Durum ve Eylem düğmesi
 
-WVC her açılıştan sonra durum raporunu `/data/adb/modules/WVC/status.txt` dosyasına, kısa özetini modül açıklamasına yazar. Kök yöneticisindeki Eylem düğmesi aynı raporu gösterir: kök yöneticisi, Zygisk, LSPosed ve AnyWebView sürümleri, AnyWebView kanca günlüğü, sistem listesindeki her sağlayıcı ve durumu, WVC paketleri.
+WVC her açılıştan sonra durum raporunu `/data/adb/modules/WVC/status.txt` dosyasına, kısa özetini modül açıklamasına yazar. Kök yöneticisindeki Eylem düğmesi aynı raporu gösterir: kök yöneticisi, Zygisk, LSPosed ve AnyWebView sürümleri, AnyWebView kanca günlüğü, sistem listesindeki her sağlayıcı ve durumu, WVC paketleri. Ardından kurulu WebView'ların yeni sürümlerini denetler ve kurar (bkz. [Kurulu WebView'ların güncellemeleri](#kurulu-webviewların-güncellemeleri)).
 
 Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebView sürümünün altındadır. Android bu asgari değeri listedeki sağlayıcıların fabrika (sistem bölümündeki) sürümlerinden alır. Bu durumda Eylem düğmesi paketi modülün içine sistem uygulaması olarak (`/product/app`) kopyalar ve `/data` kopyasını kaldırır. Yeniden başlatmadan sonra sistem kopyası fabrika sürümü sayılır ve asgari değeri düşürür. KernelSU ve APatch'te bunun için etkin bir metamodül gerekir. Bu eylem modülün içinden henüz denenmedi; aynı işlem elle, BaikalOS 16.3 (user derleme) çalıştıran bir POCO F1'de çalıştı.
 
@@ -47,14 +47,15 @@ Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebV
 - Eylem düğmesiyle sisteme taşınan WebView'lar modülle birlikte kaldırılır.
 - WVC'nin `/data`'ya kurduğu WebView'lar modül kaldırılınca yerinde kalır.
 - Başka bir kimlikle kurulu bir WebView Changer modülü kurulumu durdurur. Önce onu kaldırıp yeniden başlatın: onun kaldırma betiği bir sonraki açılışta kurduğu paketleri siler, bunlar arasında WVC'nin kurduğu paketler de olabilir.
+- Güncelleme denetimi ağ bağlantısı ister. Bağlantı yoksa WVC saatte bir yeniden dener.
 - Eski WVC (Lordify tabanlı, aynı kimlik) bu sürümle değiştirilir. Yeniden başlatmadan sonra stok WebView ve Chrome geri gelir. Eski sürümün kurduğu GrapheneOS Vanadium `/data`'da kalır; kurulum ekranı onun için `pm uninstall` komutunu gösterir.
 
 ## Test edilen cihazlar
 
 | Cihaz | ROM | Root | Sonuç |
 |---|---|---|---|
-| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: kurulum, 9.0 üzerine güncelleme, 32 bit APK atlandı, Vanadium geçerli ve etkin; AOSmium AnyWebView ile geçerli |
-| Samsung Galaxy A8 2018 (SM-A530F) | Galaxy S23 FE yazılımının One UI portu (XROM V16.1, Android 16) | Magisk (yerleşik Zygisk), LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: kurulum; Google WebView, Cromite, Vanadium ve AOSmium geçerli; Vanadium etkin |
+| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: kurulum, 9.0 üzerine güncelleme, 32 bit APK atlandı, Vanadium geçerli ve etkin; AOSmium AnyWebView ile geçerli. WVC 9.2: indiricinin sertifika denetimleri, Eylem düğmesiyle güncelleme denetimi |
+| Samsung Galaxy A8 2018 (SM-A530F) | Galaxy S23 FE yazılımının One UI portu (XROM V16.1, Android 16) | Magisk (yerleşik Zygisk), LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: kurulum; Google WebView, Cromite, Vanadium ve AOSmium geçerli; Vanadium etkin. WVC 9.2: açılışta güncelleme denetimi ve bildirim, Eylem düğmesiyle Cromite 148'den 153'e güncellendi |
 
 Vanadium çatalı WVC olmadan bir Mi Note 10 Pro'da (LineageOS 23.2) ve bir Pixel 4a 5G'de (LineageOS 24, Android 17) de denendi. Her sürümün test notları sürüme eklenir ve [test-notes](test-notes) klasöründe durur.
 
@@ -76,6 +77,18 @@ Kaynak: sürümde adı geçen etiketteki (örneğin `156.0.8078.47.0`) [Gursu-Bi
 
 Yeni sürümler [GitHub sürümleri](https://github.com/Gursu-Bilisim/WVC/releases) olarak yayımlanır. Modülün `updateJson` satırı [update.json](update.json) dosyasını gösterir; Magisk, KernelSU ve APatch modül güncellemelerini modül listesinde bildirir.
 
+### Kurulu WebView'ların güncellemeleri
+
+WVC günde bir kez, cihazda kurulu paketlerin yeni sürümlerini denetler: WVC Vanadium çatalı, AOSmium, Cromite ve AnyWebView. İlk denetim WVC kurulduktan sonraki ilk açılışta yapılır. Cromite imza sertifikasından tanınır (SHA-256 `633fa41d8211d6d0916a819b89668c6de92e64232da67f9d16fd81c3b7e923ff`); böylece aynı paket adını kullanan ROM'un kendi AOSP WebView'ı Cromite sanılmaz. Denetim [WVC](https://github.com/Gursu-Bilisim/WVC/releases), [AOSmium](https://codeberg.org/AXP-OS/app_aosmium/releases), [Cromite](https://github.com/uazo/cromite/releases) ve [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) depolarının sürüm listelerini GitHub ve Codeberg API'leriyle okur.
+
+Yeni bir sürüm bulunursa WVC bunu modül açıklamasına yazar ve o sürümler için bir kez bildirim gönderir. Bildirim Kabuk uygulamasından (`com.android.shell`) gelir, çünkü Android kök olarak gönderilen bildirimleri düşürüyor. Bildirime dokununca bir şey açılmaz: Android, Kabuk'un bu bildirim için dokunma eylemi oluşturmasına izin vermiyor. Sistem ayarlarında Kabuk bildirimleri kapatılırsa bu bildirimler de gelmez.
+
+Eylem düğmesi yeniden denetler ve yeni sürümleri kurar. Her paket için APK'yı `/data/local/tmp/wvc-dl` klasörüne indirir; boyutu, GitHub'ın yayımladığı SHA-256'yı ya da AOSmium'un `.sha512` dosyasını, paket adını ve ABI'leri denetler; `pm install` ile kurar ve indirilen dosyayı siler. Android bir güncellemeyi yalnız kurulu paketle aynı anahtarla imzalıysa kurar. Cromite'ın `arm64_SystemWebView.apk` dosyası yaklaşık 290 MB'tır ve indirme sırasında Eylem ekranında ilerleme görünmez. AnyWebView güncellendiyse yeniden başlatın.
+
+İndirmeleri `wvc-fetch.dex` yapar: `app_process` ile çalışan ve Android'in kendi HTTPS uygulamasını kullanan küçük bir Java programı. Sunucu sertifikası sistemin sertifika deposuna göre denetlenir; yalnız `https` adresleri ve yönlendirmeleri kabul edilir. Kök yöneticilerinin busybox'ındaki `wget` sertifika denetlemediği için WVC onu kullanmaz. Kaynak ve derleme betiği: [fetch/](fetch).
+
+Denetimi kapatmak için `/data/adb/modules/WVC/disable_update_check` dosyasını oluşturun (örneğin kök kabuğunda `touch /data/adb/modules/WVC/disable_update_check`). Dosya WVC güncellenince korunur. Eylem düğmesi bu durumda yalnız durumu gösterir.
+
 ## Tanı araçları
 
 `tools/` geliştirme sırasında kullanılan betikleri içerir (mesajlar Türkçe):
@@ -93,4 +106,4 @@ Yeni sürümler [GitHub sürümleri](https://github.com/Gursu-Bilisim/WVC/releas
 
 ## Lisans
 
-Modül, araçlar ve derleme betiği GNU General Public License v3.0 ya da sonraki sürümler altında lisanslıdır ([LICENSE](LICENSE)). Vanadium yamaları kendi lisanslarını korur (GPL-2.0-only, çatala bakın).
+Modül, araçlar, indirici ve derleme betiği GNU General Public License v3.0 ya da sonraki sürümler altında lisanslıdır ([LICENSE](LICENSE)). Vanadium yamaları kendi lisanslarını korur (GPL-2.0-only, çatala bakın).

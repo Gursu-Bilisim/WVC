@@ -5,7 +5,7 @@
 . "$MODPATH/wvc-lib.sh"
 
 ui_print " "
-ui_print "WebView Changer (WVC) v9.1"
+ui_print "WebView Changer (WVC) $(grep -m1 "^version=" "$MODPATH/module.prop" | cut -d= -f2)"
 ui_print "kgursu (Gursu-Bilisim @ GitHub)"
 ui_print "$(m "Lordify WebView Changer'dan esinlenildi" "Inspired by Lordify's WebView Changer")"
 ui_print " "
@@ -70,6 +70,8 @@ if [ -f "$WVC_LIVE/wvc.list" ]; then
         ui_print "$(m "- Sistem kurulumu korundu: $(wvc_name "$p")" "- System install kept: $(wvc_name "$p")")"
     done < "$WVC_LIVE/wvc.list"
 fi
+# Guncelleme denetimi kapatildiysa kapali kalsin
+[ -f "$WVC_LIVE/disable_update_check" ] && touch "$MODPATH/disable_update_check"
 
 TRIED=$MODPATH/.tried
 : > "$TRIED"
@@ -159,6 +161,9 @@ ui_print " "
 ui_print "$(m "Yeniden başlatın. AnyWebView kurulu WebView'ları açılışta tarar;" "Reboot. AnyWebView scans installed WebViews at boot;")"
 ui_print "$(m "yeni kurulanlar ancak sonraki açılışta listeye girer." "newly installed ones join the list after the next boot.")"
 ui_print "$(m "Durum açılıştan sonra modül açıklamasında ve $WVC_LIVE/status.txt dosyasında." "After boot the status is in the module description and in $WVC_LIVE/status.txt.")"
+ui_print "$(m "Kurulu WebView'ların ve AnyWebView'ın yeni sürümleri günde bir denetlenir;" "New versions of the installed WebViews and AnyWebView are checked once a day;")"
+ui_print "$(m "bulunursa açıklamada ve bir Kabuk bildiriminde yazar, Eylem düğmesi kurar." "they are shown in the description and a Shell notification; the Action button installs them.")"
+ui_print "$(m "Kapatmak için: touch $WVC_LIVE/disable_update_check" "To turn it off: touch $WVC_LIVE/disable_update_check")"
 
 set_perm_recursive "$MODPATH" 0 0 0755 0644
 if [ -d "$MODPATH/system" ]; then
