@@ -1,0 +1,78 @@
+name: Test report / Test raporu
+description: Report how WVC works on your device / WVC'nin cihazınızda nasıl çalıştığını bildirin
+title: "[Test] <device> / <ROM> / <root manager>"
+labels: ["test-report"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing. Remove personal data (account names, serial numbers) before posting.
+        Test ettiğiniz için teşekkürler. Göndermeden önce kişisel bilgileri (hesap adları, seri numaraları) silin.
+  - type: input
+    id: wvc
+    attributes:
+      label: WVC version / WVC sürümü
+      placeholder: v9.3
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device (model and codename) / Cihaz (model ve kod adı)
+      placeholder: Galaxy Tab S7+ Wi-Fi, gts7xlwifi
+    validations:
+      required: true
+  - type: input
+    id: rom
+    attributes:
+      label: ROM and Android version / ROM ve Android sürümü
+      placeholder: LineageOS 23.2 (Android 16)
+    validations:
+      required: true
+  - type: input
+    id: root
+    attributes:
+      label: Root manager and version / Kök yöneticisi ve sürümü
+      placeholder: KernelSU 1.0.x, Magisk 31.0, APatch / FolkPatch ...
+    validations:
+      required: true
+  - type: input
+    id: modules
+    attributes:
+      label: Zygisk provider, LSPosed, AnyWebView, metamodule / Zygisk sağlayıcısı, LSPosed, AnyWebView, metamodül
+      placeholder: Zygisk Next 1.5.2, LSPosed 2.2.1, AnyWebView 1.4.5, Hybrid Mount 6.2.5
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result / Sonuç
+      options:
+        - Works / Çalışıyor
+        - Partly works / Kısmen çalışıyor
+        - Does not work / Çalışmıyor
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What did you test and what happened? / Neyi denediniz, ne oldu?
+      description: Installed APKs, Action button, update check, system install ... / Kurulan APK'lar, Eylem düğmesi, güncelleme denetimi, sistem kurulumu ...
+    validations:
+      required: true
+  - type: textarea
+    id: action
+    attributes:
+      label: Action output / Eylem çıktısı
+      description: Root manager > WVC > Action, then copy or save the log / Kök yöneticisi > WVC > Eylem, sonra günlüğü kopyalayın ya da kaydedin
+      render: text
+  - type: textarea
+    id: status
+    attributes:
+      label: status.txt
+      description: /data/adb/modules/WVC/status.txt
+      render: text
+  - type: textarea
+    id: updatelog
+    attributes:
+      label: update.log
+      description: /data/adb/modules/WVC/update.log
+      render: text

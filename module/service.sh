@@ -6,6 +6,7 @@ MODDIR=${0%/*}
 . "$MODDIR/wvc-update.sh"
 
 until [ "$(getprop sys.boot_completed)" = 1 ]; do sleep 5; done
+wvc_set_lang
 # LSPosed gunlugu ve WebView servisi otursun
 sleep 30
 

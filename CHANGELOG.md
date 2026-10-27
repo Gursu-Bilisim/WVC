@@ -1,5 +1,11 @@
 # Changelog
 
+## v9.3 (2026-10-27)
+
+- Language: the system language is read from the Settings language list (`system_locales`) before `persist.sys.locale` and `ro.product.locale`. On a Galaxy Tab S7+ with a Turkish UI, `persist.sys.locale` was empty and `ro.product.locale` was `en-US`, so WVC printed English. The boot script reads the language again after boot, when the settings provider answers.
+- Update check: after a failed check WVC retries every 5 minutes up to 6 times, then hourly. At boot the network may come up only after the first check (seen on the same tablet: DNS failed at `boot_completed` and worked 30 s later).
+- README: KernelSU marked as not tested yet; test report form for GitHub issues.
+
 ## v9.2 (2026-10-27)
 
 - Daily update check for the installed WVC Vanadium fork, AOSmium, Cromite and AnyWebView. New versions are shown in the module description and in one notification (posted by the Shell app); the Action button downloads, checks and installs them.

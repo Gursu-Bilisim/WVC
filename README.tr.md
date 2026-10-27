@@ -18,7 +18,7 @@ WVC, Google WebView'ı (Play Store'dan güncellenir) ve GrapheneOS imzalı Vanad
 
 ## Gereksinimler
 
-- Root: Magisk, KernelSU ya da APatch (FolkPatch dahil).
+- Root: Magisk, KernelSU ya da APatch (FolkPatch dahil). WVC Magisk ve FolkPatch ile denendi; KernelSU henüz denenmedi, KernelSU kullanan bir cihazdan gelecek [test raporu](#test-raporları) faydalı olur.
 - Bir Zygisk sağlayıcısı: Magisk'in yerleşik Zygisk'i, KernelSU ve APatch'te [Zygisk Next](https://github.com/LSPosed/ZygiskNext/releases).
 - [LSPosed](https://lsposed.zip) ve [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) 1.4.5 ya da üstü. LSPosed'da AnyWebView'ın kapsamı yalnız **Sistem Çerçevesi** olmalı. AnyWebView kurulu WebView paketlerini sistemin sağlayıcı listesine ekler; o olmadan yalnız ROM'un zaten listelediği sağlayıcılar seçilebilir. 1.4.5, `getWebViewPackages()` metodunun satır içine alındığı derlemelerde de (Samsung One UI gibi) çalışır ([kayıt #37](https://github.com/neoblackxt/AnyWebView/issues/37)).
 - Yalnız KernelSU ve APatch'te sistem kurulumu eylemi için: [Hybrid Mount](https://github.com/Hybrid-Mount/meta-hybrid_mount/releases) gibi bir metamodül.
@@ -55,6 +55,7 @@ Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebV
 | Cihaz | ROM | Root | Sonuç |
 |---|---|---|---|
 | Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: kurulum, 9.0 üzerine güncelleme, 32 bit APK atlandı, Vanadium geçerli ve etkin; AOSmium AnyWebView ile geçerli. WVC 9.2: indiricinin sertifika denetimleri, Eylem düğmesiyle güncelleme denetimi |
+| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | Android 16 | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: kök yöneticisinden 9.1'den güncelleme; Cromite sertifikasından tanındı; Vanadium, AOSmium ve Cromite geçerli. WVC 9.3: Türkçe mesajlar, açılışta güncelleme denetimi |
 | Samsung Galaxy A8 2018 (SM-A530F) | Galaxy S23 FE yazılımının One UI portu (XROM V16.1, Android 16) | Magisk (yerleşik Zygisk), LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: kurulum; Google WebView, Cromite, Vanadium ve AOSmium geçerli; Vanadium etkin. WVC 9.2: açılışta güncelleme denetimi ve bildirim, Eylem düğmesiyle Cromite 148'den 153'e güncellendi |
 
 Vanadium çatalı WVC olmadan bir Mi Note 10 Pro'da (LineageOS 23.2) ve bir Pixel 4a 5G'de (LineageOS 24, Android 17) de denendi. Her sürümün test notları sürüme eklenir ve [test-notes](test-notes) klasöründe durur.
@@ -88,6 +89,10 @@ Eylem düğmesi yeniden denetler ve yeni sürümleri kurar. Her paket için APK'
 İndirmeleri `wvc-fetch.dex` yapar: `app_process` ile çalışan ve Android'in kendi HTTPS uygulamasını kullanan küçük bir Java programı. Sunucu sertifikası sistemin sertifika deposuna göre denetlenir; yalnız `https` adresleri ve yönlendirmeleri kabul edilir. Kök yöneticilerinin busybox'ındaki `wget` sertifika denetlemediği için WVC onu kullanmaz. Kaynak ve derleme betiği: [fetch/](fetch).
 
 Denetimi kapatmak için `/data/adb/modules/WVC/disable_update_check` dosyasını oluşturun (örneğin kök kabuğunda `touch /data/adb/modules/WVC/disable_update_check`). Dosya WVC güncellenince korunur. Eylem düğmesi bu durumda yalnız durumu gösterir.
+
+## Test raporları
+
+Denenmiş cihazlar listesinde olmayan cihaz, ROM ve kök yöneticilerinden gelen raporlar, özellikle KernelSU, en çok işe yarayanlar. [Test raporu formuyla](https://github.com/Gursu-Bilisim/WVC/issues/new?template=test-report.yml) bir kayıt açın. Form cihazı, ROM'u, kök yöneticisini, modül sürümlerini ve WVC'nin zaten yazdığı metinleri ister: Eylem çıktısı, `/data/adb/modules/WVC/status.txt` ve `/data/adb/modules/WVC/update.log`. Göndermeden önce kişisel bilgileri silin.
 
 ## Tanı araçları
 

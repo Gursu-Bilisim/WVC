@@ -5,11 +5,27 @@ WVC_ID=WVC
 WVC_LIVE=/data/adb/modules/$WVC_ID
 WVC_ANYWEBVIEW=com.thinkdifferent.anywebview
 
-# Dil: sistem yerel ayari Turkce ise Turkce, degilse Ingilizce.
-case "$(getprop persist.sys.locale)$(getprop ro.product.locale)" in
-    tr*) WVC_LANG="tr" ;;
-    *) WVC_LANG="en" ;;
-esac
+# Dil: sistem dili Turkce ise Turkce, degilse Ingilizce.
+# Ayarlar'da secilen dil "system_locales" ayarinda (virgulle ayrilmis liste, ilki
+# gecerli). persist.sys.locale her ROM'da yazilmiyor: SM-T970'te bos,
+# ro.product.locale en-US, system_locales tr-TR (2026-10-27). Sira: system_locales,
+# persist.sys.locale, ro.product.locale.
+wvc_locale() {
+    _l=$(settings get system system_locales 2>/dev/null)
+    case "$_l" in ''|null) _l=$(getprop persist.sys.locale) ;; esac
+    [ -n "$_l" ] || _l=$(getprop ro.product.locale)
+    echo "${_l%%,*}"
+}
+# settings ayar saglayicisi acilis tamamlanmadan yanit vermez; service.sh dili
+# boot_completed'den sonra wvc_set_lang ile yeniden belirler (v9.3 test 1,
+# SM-T970: acilista okunan dil Ingilizce kaldi).
+wvc_set_lang() {
+    case "$(wvc_locale)" in
+        tr*) WVC_LANG="tr" ;;
+        *) WVC_LANG="en" ;;
+    esac
+}
+wvc_set_lang
 # m "Turkce metin" "English text"
 m() { if [ "$WVC_LANG" = tr ]; then printf '%s\n' "$1"; else printf '%s\n' "$2"; fi; }
 

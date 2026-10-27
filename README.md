@@ -18,7 +18,7 @@ WVC does not install Google WebView (it updates from the Play Store) or the Grap
 
 ## Requirements
 
-- Root: Magisk, KernelSU or APatch (including FolkPatch).
+- Root: Magisk, KernelSU or APatch (including FolkPatch). WVC has been tested with Magisk and FolkPatch; KernelSU has not been tested yet, so a [test report](#test-reports) from a KernelSU device is welcome.
 - A Zygisk provider: Magisk's built-in Zygisk, or [Zygisk Next](https://github.com/LSPosed/ZygiskNext/releases) on KernelSU and APatch.
 - [LSPosed](https://lsposed.zip) and [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) 1.4.5 or newer. In LSPosed, AnyWebView's scope must be **System Framework** only. AnyWebView adds installed WebView packages to the system's provider list; without it, only providers that the ROM already lists can be selected. Version 1.4.5 also works on builds where `getWebViewPackages()` is inlined, such as Samsung One UI ([issue #37](https://github.com/neoblackxt/AnyWebView/issues/37)).
 - Only for the system install action on KernelSU and APatch: a metamodule such as [Hybrid Mount](https://github.com/Hybrid-Mount/meta-hybrid_mount/releases).
@@ -55,6 +55,7 @@ If a WVC package shows `Version code too low`, its version is below the ROM's mi
 | Device | ROM | Root | Result |
 |---|---|---|---|
 | Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: install, update over 9.0, 32-bit APK skipped, Vanadium valid and active; AOSmium valid through AnyWebView. WVC 9.2: certificate checks of the downloader, update check with the Action button |
+| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | Android 16 | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: update from 9.1 through the root manager; Cromite recognised by its certificate; Vanadium, AOSmium and Cromite valid. WVC 9.3: Turkish messages, update check at boot |
 | Samsung Galaxy A8 2018 (SM-A530F) | One UI port of the Galaxy S23 FE firmware (XROM V16.1, Android 16) | Magisk with built-in Zygisk, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: install; Google WebView, Cromite, Vanadium and AOSmium valid; Vanadium active. WVC 9.2: update check at boot with notification, Cromite 148 to 153 installed with the Action button |
 
 The Vanadium fork was also tested without WVC on a Mi Note 10 Pro (LineageOS 23.2) and a Pixel 4a 5G (LineageOS 24, Android 17). Test notes for every release are attached to the release and kept in [test-notes](test-notes).
@@ -88,6 +89,10 @@ The Action button checks again and installs the new versions. For each package i
 Downloads use `wvc-fetch.dex`, a small Java program that runs with `app_process` and uses Android's own HTTPS implementation: the server certificate is checked against the system CA store, and only `https` addresses and redirects are accepted. The `wget` in the root managers' busybox does not check certificates, so WVC does not use it. Source and build script: [fetch/](fetch).
 
 To turn the check off, create `/data/adb/modules/WVC/disable_update_check` (for example `touch /data/adb/modules/WVC/disable_update_check` in a root shell). The file is kept when WVC is updated. The Action button then only shows the status.
+
+## Test reports
+
+Reports from devices, ROMs and root managers that are not in the tested list help most, KernelSU above all. Open an issue with the [test report form](https://github.com/Gursu-Bilisim/WVC/issues/new?template=test-report.yml). It asks for the device, ROM, root manager and module versions, and the text WVC already writes: the Action output, `/data/adb/modules/WVC/status.txt` and `/data/adb/modules/WVC/update.log`. Remove anything personal before posting.
 
 ## Diagnostic tools
 

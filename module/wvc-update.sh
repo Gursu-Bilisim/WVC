@@ -180,23 +180,32 @@ wvc_update_notify() {
         && echo "$_key" > "$_md/update-notified"
 }
 
-# service.sh dongusu: saatte bir bakar, son basarili denetimden 24 saat gectiyse denetler.
+# service.sh dongusu: son basarili denetimden 24 saat gectiyse denetler.
 # sleep askida gecen sureyi saymadigi icin duvar saatiyle karsilastirilir.
+# Basarisiz denemeden sonra ilk 6 yeniden deneme 5 dakikada bir, sonra saatte bir:
+# gts7xlwifi'de (FolkPatch, 2026-10-27) boot_completed+0 sn'de DNS cozulmedi,
+# +30 sn'de cozuldu; acilis denetimi ag hazir olmadan calisabiliyor.
 wvc_update_loop() {
     _md=$1
+    _fail=0
     while :; do
+        _wait=3600
         if [ ! -f "$_md/disable_update_check" ]; then
             _now=$(date +%s)
             _last=$(cat "$_md/update-last" 2>/dev/null)
             case "$_last" in ''|*[!0-9]*) _last=0 ;; esac
             if [ $((_now - _last)) -ge 86400 ] || [ "$_now" -lt "$_last" ]; then
                 if wvc_update_check "$_md" > "$_md/update.log" 2>&1; then
+                    _fail=0
                     wvc_desc "$_md"
                     wvc_update_notify "$_md"
+                else
+                    _fail=$((_fail + 1))
+                    [ "$_fail" -le 6 ] && _wait=300
                 fi
             fi
         fi
-        sleep 3600
+        sleep "$_wait"
     done
 }
 
