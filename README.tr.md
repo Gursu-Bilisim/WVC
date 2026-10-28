@@ -6,6 +6,8 @@ Alternatif WebView sağlayıcılarını stok WebView'ın yanına kuran bir Magis
 
 WVC, Lordify'ın [WebView Changer](https://gitlab.com/Lordify/webview-changer) modülünden esinlenildi. Sürüm 9 baştan yazıldı: stok WebView'ı gizlemiyor, sağlayıcı listesini overlay ile değiştirmiyor.
 
+[Rehber](docs/rehber.md) WVC'yi kullanma yollarını karşılaştırır: stok WebView'ın yanına kurma, paketi sisteme taşıma ve WVC'de henüz olmayan aşamalar.
+
 ## Desteklenen sağlayıcılar
 
 | Sağlayıcı | Paket | İndirme | Not |
@@ -18,7 +20,7 @@ WVC, Google WebView'ı (Play Store'dan güncellenir) ve GrapheneOS imzalı Vanad
 
 ## Gereksinimler
 
-- Root: Magisk, KernelSU ya da APatch (FolkPatch dahil). WVC Magisk ve FolkPatch ile denendi; KernelSU henüz denenmedi, KernelSU kullanan bir cihazdan gelecek [test raporu](#test-raporları) faydalı olur.
+- Root: Magisk, KernelSU ya da APatch (FolkPatch dahil). WVC telefon ve tabletlerde Magisk ve FolkPatch ile, KernelSU ile ise yalnız MuMu Player emülatöründe denendi; KernelSU kullanan bir telefon ya da tabletten gelecek [test raporu](#test-raporları) faydalı olur.
 - Bir Zygisk sağlayıcısı: Magisk'in yerleşik Zygisk'i, KernelSU ve APatch'te [Zygisk Next](https://github.com/LSPosed/ZygiskNext/releases).
 - [LSPosed](https://lsposed.zip) ve [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) 1.4.5 ya da üstü. LSPosed'da AnyWebView'ın kapsamı yalnız **Sistem Çerçevesi** olmalı. AnyWebView kurulu WebView paketlerini sistemin sağlayıcı listesine ekler; o olmadan yalnız ROM'un zaten listelediği sağlayıcılar seçilebilir. 1.4.5, `getWebViewPackages()` metodunun satır içine alındığı derlemelerde de (Samsung One UI gibi) çalışır ([kayıt #37](https://github.com/neoblackxt/AnyWebView/issues/37)).
 - Yalnız KernelSU ve APatch'te sistem kurulumu eylemi için: [Hybrid Mount](https://github.com/Hybrid-Mount/meta-hybrid_mount/releases) gibi bir metamodül.
@@ -31,7 +33,10 @@ WVC, Google WebView'ı (Play Store'dan güncellenir) ve GrapheneOS imzalı Vanad
 4. Yeniden başlatın. AnyWebView kurulu WebView'ları her açılışta bir kez taradığı için yeni kurulan sağlayıcılar bir sonraki açılışta listeye girer.
 5. Geliştirici seçenekleri > WebView uygulaması menüsünden bir sağlayıcı seçin.
 
-Kurulum sırasında WVC her APK'nın paket adını okur, WebView sağlayıcısı olmayan APK'ları ve cihazın ABI'lerinden biri için kütüphane taşımayan APK'ları atlar (WebView manifesti `multiArch` olduğu için Android bunları reddeder). Ardından Zygisk sağlayıcısını, LSPosed'ı ve AnyWebView'ı denetleyip eksikleri yazar.
+Kurulum sırasında WVC her APK'nın paket adını okur, WebView sağlayıcısı olmayan APK'ları ve cihazın ABI'lerinden biri için kütüphane taşımayan APK'ları atlar (WebView manifesti `multiArch` olduğu için ARM cihazlarda Android bunları reddeder). x86 ve x86_64 cihazlarda yalnız x86 ABI'leri denetlenir. Ardından Zygisk sağlayıcısını, LSPosed'ı ve AnyWebView'ı denetleyip eksikleri yazar.
+
+<img src="docs/images/kurulum-tr.png" width="360" alt="WVC kurulum çıktısı"><br>
+POCO F1'de kurulum çıktısı (FolkPatch, WVC 9.4): Vanadium ve AOSmium kuruldu.
 
 Kurulum, Eylem ve durum mesajları sistem dili Türkçe ise Türkçe, değilse İngilizcedir.
 
@@ -39,7 +44,7 @@ Kurulum, Eylem ve durum mesajları sistem dili Türkçe ise Türkçe, değilse �
 
 WVC her açılıştan sonra durum raporunu `/data/adb/modules/WVC/status.txt` dosyasına, kısa özetini modül açıklamasına yazar. Kök yöneticisindeki Eylem düğmesi aynı raporu gösterir: kök yöneticisi, Zygisk, LSPosed ve AnyWebView sürümleri, AnyWebView kanca günlüğü, sistem listesindeki her sağlayıcı ve durumu, WVC paketleri. Ardından kurulu WebView'ların yeni sürümlerini denetler ve kurar (bkz. [Kurulu WebView'ların güncellemeleri](#kurulu-webviewların-güncellemeleri)).
 
-Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebView sürümünün altındadır. Android bu asgari değeri listedeki sağlayıcıların fabrika (sistem bölümündeki) sürümlerinden alır. Bu durumda Eylem düğmesi paketi modülün içine sistem uygulaması olarak (`/product/app`) kopyalar ve `/data` kopyasını kaldırır. Yeniden başlatmadan sonra sistem kopyası fabrika sürümü sayılır ve asgari değeri düşürür. KernelSU ve APatch'te bunun için etkin bir metamodül gerekir. Bu eylem modülün içinden henüz denenmedi; aynı işlem elle, BaikalOS 16.3 (user derleme) çalıştıran bir POCO F1'de çalıştı.
+Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebView sürümünün altındadır. Android bu asgari değeri listedeki sağlayıcıların fabrika (sistem bölümündeki) sürümlerinden alır. Bu durumda Eylem düğmesi paketi modülün içine sistem uygulaması olarak (`/product/app`) kopyalar ve `/data` kopyasını kaldırır. Yeniden başlatmadan sonra sistem kopyası fabrika sürümü sayılır ve asgari değeri düşürür. KernelSU ve APatch'te bunun için etkin bir metamodül gerekir. BaikalOS 16.3 (user derleme), FolkPatch ve Hybrid Mount kullanan bir POCO F1'de denendi: asgari değer 801003601'den 777817801'e indi ve AOSmium geçerli oldu ([rehberde B aşaması](docs/rehber.md#b-paketi-sisteme-taşıma)). Magisk'te denenmedi.
 
 ## Bilinen sınırlar
 
@@ -47,16 +52,26 @@ Bir WVC paketi `Version code too low` gösteriyorsa sürümü ROM'un asgari WebV
 - Eylem düğmesiyle sisteme taşınan WebView'lar modülle birlikte kaldırılır.
 - WVC'nin `/data`'ya kurduğu WebView'lar modül kaldırılınca yerinde kalır.
 - Başka bir kimlikle kurulu bir WebView Changer modülü kurulumu durdurur. Önce onu kaldırıp yeniden başlatın: onun kaldırma betiği bir sonraki açılışta kurduğu paketleri siler, bunlar arasında WVC'nin kurduğu paketler de olabilir.
-- Güncelleme denetimi ağ bağlantısı ister. Bağlantı yoksa WVC saatte bir yeniden dener.
+- Güncelleme denetimi ağ bağlantısı ister. Bağlantı yoksa WVC 6 kereye kadar 5 dakikada bir, sonra saatte bir yeniden dener.
+- x86 ve x86_64 cihazlar (MuMu Player gibi emülatörler): WVC bir APK'yı yalnız cihazın x86 ABI'leri için kütüphane taşıyorsa kurar. Güncel sürümlerinde AOSmium ve Vanadium çatalı yalnız ARM için; Cromite de WebView'ını yalnız arm64 için yayımlıyor (`arm64_SystemWebView.apk`, v153). MuMu Player'da WVC, APK'yı elle kurmaya göre az şey katar: testte kullanılan x86_64 WebView (eski bir sürümden Cromite 140.0.7339.81) stok yuvaya geçtiği için listede yine tek sağlayıcı olur; MuMu'nun `system_server`'ı her WebView paketi değişikliğinde, `adb install` ile de, çöküyor.
 - Eski WVC (Lordify tabanlı, aynı kimlik) bu sürümle değiştirilir. Yeniden başlatmadan sonra stok WebView ve Chrome geri gelir. Eski sürümün kurduğu GrapheneOS Vanadium `/data`'da kalır; kurulum ekranı onun için `pm uninstall` komutunu gösterir.
 
 ## Test edilen cihazlar
 
 | Cihaz | ROM | Root | Sonuç |
 |---|---|---|---|
-| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: kurulum, 9.0 üzerine güncelleme, 32 bit APK atlandı, Vanadium geçerli ve etkin; AOSmium AnyWebView ile geçerli. WVC 9.2: indiricinin sertifika denetimleri, Eylem düğmesiyle güncelleme denetimi |
-| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | Android 16 | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: kök yöneticisinden 9.1'den güncelleme; Cromite sertifikasından tanındı; Vanadium, AOSmium ve Cromite geçerli. WVC 9.3: Türkçe mesajlar, açılışta güncelleme denetimi |
-| Samsung Galaxy A8 2018 (SM-A530F) | Galaxy S23 FE yazılımının One UI portu (XROM V16.1, Android 16) | Magisk (yerleşik Zygisk), LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: kurulum; Google WebView, Cromite, Vanadium ve AOSmium geçerli; Vanadium etkin. WVC 9.2: açılışta güncelleme denetimi ve bildirim, Eylem düğmesiyle Cromite 148'den 153'e güncellendi |
+| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: kurulum, 9.0 üzerine güncelleme, 32 bit APK atlandı, Vanadium geçerli ve etkin; AOSmium AnyWebView ile geçerli. WVC 9.2: indiricinin sertifika denetimleri, Eylem düğmesiyle güncelleme denetimi. Cromite kurulamıyor: ROM'un AOSP WebView'ından eski |
+| Xiaomi POCO F1 (beryllium) | BaikalOS 16.3, resmi olmayan user derleme | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.4: Vanadium, AOSmium ve Cromite kurulumu, Türkçe ve İngilizce; Cromite ROM'un AOSP WebView'ının güncellemesi olarak kuruldu; AOSmium `Version code too low`, Eylem düğmesiyle sisteme taşındı, yeniden başlatınca geçerli |
+| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | LineageOS 23.0, resmi olmayan derleme (Android 16) | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: kök yöneticisinden 9.1'den güncelleme; Cromite sertifikasından tanındı; Vanadium, AOSmium ve Cromite geçerli. WVC 9.3: Türkçe mesajlar, açılışta güncelleme denetimi |
+| MuMu Player (emülatör, x86_64) | Android 15 | KernelSU 3.2.5 (GKI), mountify 2.0.5, Zygisk Next 1.5.2, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.4: önceden kurulu x86_64 Cromite 140.0.7339.81 ile kurulum (atlandı); Cromite geçerli ve etkin; Eylem ve güncelleme denetimi |
+| Samsung Galaxy A8 2018 (SM-A530F) | Galaxy S23 FE yazılımının One UI portu (XROM V16.1, Android 16) | Magisk (yerleşik Zygisk), LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: kurulum; Google WebView, Cromite, Vanadium ve AOSmium geçerli; Vanadium etkin. WVC 9.2: açılışta güncelleme denetimi ve bildirim, Eylem düğmesiyle Cromite 148'den 153'e güncellendi. WVC 9.4: üç sağlayıcının Türkçe ve İngilizce kurulumu, dördü geçerli |
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>4 seçenekli sonuçlara örnek:</b> jackpotlte (One UI portu)<br><br><a href="docs/images/jackpotlte.png"><img src="docs/images/jackpotlte.png" alt="jackpotlte WebView listesi"></a><br>(Google WebView, Cromite, Vanadium, AOSmium)</td>
+<td width="50%" valign="top"><b>3 seçenekli sonuçlara örnek:</b> SM-T970 (LineageOS 23.0, resmi olmayan sürüm)<br><br><a href="docs/images/sm-t970.png"><img src="docs/images/sm-t970.png" alt="SM-T970 WebView listesi"></a><br>(Cromite stok yuvada, Vanadium, AOSmium)</td>
+</tr>
+</table>
 
 Vanadium çatalı WVC olmadan bir Mi Note 10 Pro'da (LineageOS 23.2) ve bir Pixel 4a 5G'de (LineageOS 24, Android 17) de denendi. Her sürümün test notları sürüme eklenir ve [test-notes](test-notes) klasöründe durur.
 

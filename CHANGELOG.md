@@ -1,5 +1,14 @@
 # Changelog
 
+## v9.4 (2026-10-28)
+
+- x86 and x86_64 devices: the installer accepts them. Only the x86 ABIs are checked in the APK; the ARM ABIs that emulators such as MuMu Player list come from a translation layer.
+- An APK that is identical to the installed package is skipped instead of being installed again. On MuMu Player (Android 15) reinstalling the active WebView restarted `system_server` (`NullPointerException` in `PinnerService`).
+- The boot-time update check and the Action button could run at the same time and share temporary files. Two results: a `mv: can't rename .../updates.tmp` error in the Action output, and a `module.prop` reduced to its description line, so the root manager showed the module without name, version and author. Temporary files are now per process and `module.prop` is replaced in one step. The second error is also present in v9.3.
+- The check for another WebView Changer module no longer uses `grep -i`. On MuMu Player busybox and toybox `grep -i` crashed (`Segmentation fault` in the install log) on `module.prop` files with emoji or Turkish letters.
+- README: x86 limitations; MuMu Player and POCO F1 in the tested devices, with screenshots of the installer and the provider lists; the system install with the Action button is tested (POCO F1, FolkPatch, Hybrid Mount); retry interval of the update check.
+- New guide comparing the ways to use WVC: [English](docs/guide.md), [Türkçe](docs/rehber.md).
+
 ## v9.3 (2026-10-27)
 
 - Language: the system language is read from the Settings language list (`system_locales`) before `persist.sys.locale` and `ro.product.locale`. On a Galaxy Tab S7+ with a Turkish UI, `persist.sys.locale` was empty and `ro.product.locale` was `en-US`, so WVC printed English. The boot script reads the language again after boot, when the settings provider answers.

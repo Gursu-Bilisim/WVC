@@ -76,14 +76,21 @@ wvc_apk_pkg() {
 
 # APK'da eksik olan, cihazin destekledigi ABI'ler (bos ise tamam).
 # WebView manifesti multiArch; cihazin her ABI'si icin kutuphane gerekir.
+# Yalniz cihazin kendi mimari ailesi sayilir: x86 emulatorlerde (MuMu) ARM ABI'leri
+# ceviri katmanindan gelir (abilist x86_64,arm64-v8a,x86); WebView kutuphanesi
+# uygulamanin kendi surecine yuklendigi icin ARM kutuphanesi orada calismaz.
 wvc_abi_missing() {
     # busybox unzip -l dosya suzgecinde eslesme olmasa da 0 donuyor (tucana,
     # 2026-10-26); liste grep ile aranir.
     _miss=""
     _ls=$(unzip -l "$1" 2>/dev/null)
+    case "$(getprop ro.product.cpu.abi)" in
+        x86*) _fam="x86_64 x86" ;;
+        *) _fam="arm64-v8a armeabi-v7a" ;;
+    esac
     for _a in $(getprop ro.product.cpu.abilist | tr ',' ' '); do
-        case "$_a" in
-            arm64-v8a|armeabi-v7a)
+        case " $_fam " in
+            *" $_a "*)
                 echo "$_ls" | grep -q "lib/$_a/libwebviewchromium.so" \
                     || _miss="$_miss $_a" ;;
         esac

@@ -6,6 +6,8 @@ A Magisk / KernelSU / APatch module that installs alternative WebView providers 
 
 WVC was inspired by Lordify's [WebView Changer](https://gitlab.com/Lordify/webview-changer). Version 9 is a rewrite: it no longer hides the stock WebView or replaces the provider list with an overlay.
 
+The [guide](docs/guide.md) compares the ways to use WVC: installing next to the stock WebView, moving a package to the system, and the stages that are not in WVC yet.
+
 ## Supported providers
 
 | Provider | Package | Download | Notes |
@@ -18,7 +20,7 @@ WVC does not install Google WebView (it updates from the Play Store) or the Grap
 
 ## Requirements
 
-- Root: Magisk, KernelSU or APatch (including FolkPatch). WVC has been tested with Magisk and FolkPatch; KernelSU has not been tested yet, so a [test report](#test-reports) from a KernelSU device is welcome.
+- Root: Magisk, KernelSU or APatch (including FolkPatch). WVC has been tested with Magisk and FolkPatch on phones and tablets, and with KernelSU only on the MuMu Player emulator, so a [test report](#test-reports) from a KernelSU phone or tablet is welcome.
 - A Zygisk provider: Magisk's built-in Zygisk, or [Zygisk Next](https://github.com/LSPosed/ZygiskNext/releases) on KernelSU and APatch.
 - [LSPosed](https://lsposed.zip) and [AnyWebView](https://github.com/neoblackxt/AnyWebView/releases) 1.4.5 or newer. In LSPosed, AnyWebView's scope must be **System Framework** only. AnyWebView adds installed WebView packages to the system's provider list; without it, only providers that the ROM already lists can be selected. Version 1.4.5 also works on builds where `getWebViewPackages()` is inlined, such as Samsung One UI ([issue #37](https://github.com/neoblackxt/AnyWebView/issues/37)).
 - Only for the system install action on KernelSU and APatch: a metamodule such as [Hybrid Mount](https://github.com/Hybrid-Mount/meta-hybrid_mount/releases).
@@ -31,7 +33,10 @@ WVC does not install Google WebView (it updates from the Play Store) or the Grap
 4. Reboot. AnyWebView scans installed WebViews once per boot, so newly installed providers show up after the next boot.
 5. Pick a provider in Developer options > WebView implementation.
 
-During installation WVC reads the package name from each APK, skips APKs that are not WebView providers, and skips APKs that lack a native library for one of the device's ABIs (the WebView manifest is `multiArch`, so Android rejects them). It then checks the Zygisk provider, LSPosed and AnyWebView and reports what is missing.
+During installation WVC reads the package name from each APK, skips APKs that are not WebView providers, and skips APKs that lack a native library for one of the device's ABIs (the WebView manifest is `multiArch`, so on ARM devices Android rejects them). On x86 and x86_64 devices only the x86 ABIs are checked. It then checks the Zygisk provider, LSPosed and AnyWebView and reports what is missing.
+
+<img src="docs/images/install-en.png" width="360" alt="WVC installer output"><br>
+Installer output on a POCO F1 (FolkPatch, WVC 9.4): Vanadium and AOSmium installed, Cromite installed as an update of the ROM's AOSP WebView.
 
 Installer, Action and status messages are in Turkish when the system language is Turkish and in English otherwise.
 
@@ -39,7 +44,7 @@ Installer, Action and status messages are in Turkish when the system language is
 
 After every boot WVC writes a status report to `/data/adb/modules/WVC/status.txt` and a short summary to the module description. The Action button in the root manager shows the same report: root manager, Zygisk, LSPosed and AnyWebView versions, the AnyWebView hook log, every provider in the system list with its state, and the WVC packages. It then checks for new versions of the installed WebViews and installs them (see [Updates of the installed WebViews](#updates-of-the-installed-webviews)).
 
-If a WVC package shows `Version code too low`, its version is below the ROM's minimum WebView version, which Android takes from the factory (system partition) versions of the listed providers. The Action button then copies that package into the module as a system app (`/product/app`) and removes its `/data` copy. After a reboot the system copy counts as a factory version and lowers the minimum. On KernelSU and APatch this needs an active metamodule. This action has not yet been tested from within the module; the same procedure done by hand worked on a POCO F1 with BaikalOS 16.3 (user build).
+If a WVC package shows `Version code too low`, its version is below the ROM's minimum WebView version, which Android takes from the factory (system partition) versions of the listed providers. The Action button then copies that package into the module as a system app (`/product/app`) and removes its `/data` copy. After a reboot the system copy counts as a factory version and lowers the minimum. On KernelSU and APatch this needs an active metamodule. Tested on a POCO F1 with BaikalOS 16.3 (user build), FolkPatch and Hybrid Mount: the minimum dropped from 801003601 to 777817801 and AOSmium became valid ([stage B in the guide](docs/guide.md#b-moving-a-package-to-the-system)). Not tested with Magisk.
 
 ## Known limitations
 
@@ -47,16 +52,26 @@ If a WVC package shows `Version code too low`, its version is below the ROM's mi
 - WebViews moved to the system with the Action button are removed together with the module.
 - WebViews that WVC installed to `/data` stay installed when the module is removed.
 - Another WebView Changer module installed under a different ID stops the installation. Remove it and reboot first: its uninstall script removes the packages it installed on the next boot, which could include packages that WVC installs.
-- The update check needs network access. Without it WVC retries every hour.
+- The update check needs network access. Without it WVC retries every 5 minutes up to 6 times, then every hour.
+- x86 and x86_64 devices (emulators such as MuMu Player): WVC installs an APK only if it carries libraries for the device's x86 ABIs. In their current releases AOSmium and the Vanadium fork are ARM only, and Cromite publishes its WebView for arm64 only (`arm64_SystemWebView.apk`, v153). On MuMu Player WVC adds little over installing the APK by hand: the x86_64 WebView used in the test (Cromite 140.0.7339.81 from an older release) takes the stock slot, so the list still has one provider, and MuMu's `system_server` crashes on every WebView package change, with `adb install` as well.
 - An older WVC (Lordify-based, same ID) is replaced. After a reboot the stock WebView and Chrome come back. A GrapheneOS Vanadium installed by the old version stays in `/data`; the installer shows the `pm uninstall` command for it.
 
 ## Tested devices
 
 | Device | ROM | Root | Result |
 |---|---|---|---|
-| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: install, update over 9.0, 32-bit APK skipped, Vanadium valid and active; AOSmium valid through AnyWebView. WVC 9.2: certificate checks of the downloader, update check with the Action button |
-| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | Android 16 | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: update from 9.1 through the root manager; Cromite recognised by its certificate; Vanadium, AOSmium and Cromite valid. WVC 9.3: Turkish messages, update check at boot |
-| Samsung Galaxy A8 2018 (SM-A530F) | One UI port of the Galaxy S23 FE firmware (XROM V16.1, Android 16) | Magisk with built-in Zygisk, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: install; Google WebView, Cromite, Vanadium and AOSmium valid; Vanadium active. WVC 9.2: update check at boot with notification, Cromite 148 to 153 installed with the Action button |
+| Xiaomi Mi Note 10 (tucana) | LineageOS 23.2 (Android 16), BitGApps | FolkPatch, Zygisk Next 1.5.2, LSPosed 2.2.1, Hybrid Mount 6.2.5, AnyWebView 1.4.5 | WVC 9.1: install, update over 9.0, 32-bit APK skipped, Vanadium valid and active; AOSmium valid through AnyWebView. WVC 9.2: certificate checks of the downloader, update check with the Action button. Cromite cannot be installed: it is older than the ROM's AOSP WebView |
+| Xiaomi POCO F1 (beryllium) | BaikalOS 16.3, unofficial user build | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.4: install of Vanadium, AOSmium and Cromite in Turkish and English; Cromite installed as an update of the ROM's AOSP WebView; AOSmium `Version code too low`, moved to the system with the Action button, valid after a reboot |
+| Samsung Galaxy Tab S7+ Wi-Fi (SM-T970) | LineageOS 23.0, unofficial build (Android 16) | FolkPatch, Hybrid Mount, Zygisk Next, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.2: update from 9.1 through the root manager; Cromite recognised by its certificate; Vanadium, AOSmium and Cromite valid. WVC 9.3: Turkish messages, update check at boot |
+| MuMu Player (emulator, x86_64) | Android 15 | KernelSU 3.2.5 (GKI), mountify 2.0.5, Zygisk Next 1.5.2, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.4: install with an x86_64 Cromite 140.0.7339.81 that was already installed (skipped); Cromite valid and active; Action and update check |
+| Samsung Galaxy A8 2018 (SM-A530F) | One UI port of the Galaxy S23 FE firmware (XROM V16.1, Android 16) | Magisk with built-in Zygisk, LSPosed 2.2.1, AnyWebView 1.4.5 | WVC 9.1: install; Google WebView, Cromite, Vanadium and AOSmium valid; Vanadium active. WVC 9.2: update check at boot with notification, Cromite 148 to 153 installed with the Action button. WVC 9.4: install of the three providers in Turkish and English, all four valid |
+
+<table>
+<tr>
+<td width="50%" valign="top"><b>Example with 4 options:</b> jackpotlte (One UI port)<br><br><a href="docs/images/jackpotlte.png"><img src="docs/images/jackpotlte.png" alt="jackpotlte WebView list"></a><br>(Google WebView, Cromite, Vanadium, AOSmium)</td>
+<td width="50%" valign="top"><b>Example with 3 options:</b> SM-T970 (LineageOS 23.0, unofficial build)<br><br><a href="docs/images/sm-t970.png"><img src="docs/images/sm-t970.png" alt="SM-T970 WebView list"></a><br>(Cromite in the stock slot, Vanadium, AOSmium)</td>
+</tr>
+</table>
 
 The Vanadium fork was also tested without WVC on a Mi Note 10 Pro (LineageOS 23.2) and a Pixel 4a 5G (LineageOS 24, Android 17). Test notes for every release are attached to the release and kept in [test-notes](test-notes).
 

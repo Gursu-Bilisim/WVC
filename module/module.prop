@@ -1,7 +1,7 @@
 id=WVC
 name=WebView Changer (WVC)
-version=v9.3
-versionCode=93
+version=v9.4
+versionCode=94
 author=kgursu (Gursu-Bilisim @ GitHub)
 description=Installs AOSmium, Vanadium (WVC fork) and Cromite next to the stock WebView; choose in Developer options > WebView implementation. AnyWebView (LSPosed) is needed to add them to the list. Inspired by Lordify's WebView Changer.
 updateJson=https://raw.githubusercontent.com/Gursu-Bilisim/WVC/main/update.json

@@ -91,7 +91,7 @@ wvc_tag_ver() { echo "$1" | sed -e 's/^vanadium-//' -e 's/^v//' -e 's/-.*//'; }
 # Rapor stdout'a. En az bir kaynak yanit verdiyse 0.
 wvc_update_check() {
     _md=$1
-    _tmp=$_md/updates.tmp
+    _tmp=$_md/updates.tmp.$$
     : > "$_tmp"
     _ok=0
     _pkgs=$(wvc_update_pkgs)
@@ -106,7 +106,7 @@ wvc_update_check() {
         _api=$1 _tre=$2 _fre=$3
         _n=$(wvc_uname "$_p")
         _cur=$(wvc_version "$_p")
-        _err=$_md/fetch.err
+        _err=$_md/fetch.err.$$
         _js=$(wvc_fetch "$_api" - application/json 2>"$_err")
         if [ -z "$_js" ]; then
             m "$_n: kaynağa ulaşılamadı ($(head -1 "$_err"))" "$_n: source unreachable ($(head -1 "$_err"))"
@@ -146,10 +146,20 @@ wvc_desc() {
         _up=" $(m "Güncelleme var: $_l (Eylem ile kurulur)." "Updates available: $_l (install with Action).")"
     fi
     _tail=$(m "Ayrıntı: Eylem düğmesi ya da status.txt. Lordify WebView Changer'dan esinlenildi." "Details: Action button or status.txt. Inspired by Lordify's WebView Changer.")
-    _t=$_md/module.prop.tmp
-    grep -v '^description=' "$_md/module.prop" > "$_t"
-    echo "description=$_sum.$_up $_tail" >> "$_t"
-    cat "$_t" > "$_md/module.prop"
+    # Acilis dongusu ile Eylem ayni anda yazabilir: gecici ad surece ozel. Satirlar
+    # kabugun kendi read'iyle suzulur; id= ya da version= yoksa module.prop'a dokunulmaz
+    # (MuMu KernelSU, 2026-10-28: ortak .tmp adiyla module.prop yalniz description
+    # satirina inmisti; yonetici Surum/Gelistirici: Unknown gosterdi). cat > ile
+    # yazmak da yetmez: dosya kesilirken okuyan surec yarim satir alir.
+    _t=$_md/module.prop.tmp.$$
+    while IFS= read -r _x || [ -n "$_x" ]; do
+        case "$_x" in description=*) ;; *) printf '%s\n' "$_x" ;; esac
+    done < "$_md/module.prop" > "$_t"
+    printf 'description=%s\n' "$_sum.$_up $_tail" >> "$_t"
+    # Yerine koyma mv ile (rename): okuyan surec yarim dosya gormez.
+    if grep -q '^id=' "$_t" 2>/dev/null && grep -q '^version=' "$_t" 2>/dev/null; then
+        mv -f "$_t" "$_md/module.prop"
+    fi
     rm -f "$_t"
 }
 
@@ -216,7 +226,7 @@ wvc_update_install() {
     [ -s "$_md/updates.txt" ] || return 0
     mkdir -p "$WVC_DL"
     _awv=0
-    _left=$_md/updates.left
+    _left=$_md/updates.left.$$
     : > "$_left"
     while read -r _p _v _url _size _dg _file; do
         [ -n "$_p" ] || continue

@@ -16,7 +16,7 @@ ui_print " "
 [ "$BOOTMODE" = true ] || abort "$(m "! Kök yöneticisinin uygulamasından kurun (recovery desteklenmiyor)." "! Install from the root manager app (recovery is not supported).")"
 [ "$API" -ge 29 ] || abort "$(m "! Android 10 (API 29) ve üstü gerekli. Bu cihaz: API $API" "! Android 10 (API 29) or newer required. This device: API $API")"
 case "$ARCH" in
-    arm|arm64) ;;
+    arm|arm64|x86|x64) ;;
     *) abort "$(m "! Desteklenmeyen mimari: $ARCH" "! Unsupported architecture: $ARCH")" ;;
 esac
 
@@ -25,11 +25,25 @@ LIST=$MODPATH/wvc.list
 
 # Baska kimlikle kurulu bir WebView Changer (Lordify ya da turevi) stok WebView'i
 # gizleyip listeyi kendi overlay'iyle degistirir; WVC ile birlikte calismaz.
+# Esleme kabugun kendisiyle: grep -i (busybox 1.36.1 ve toybox) UTF-8 emoji ya da
+# Turkce harf iceren module.prop'larda rastgele Segmentation fault verdi; -E ve -F
+# cokmedi (MuMu Android 15 x86_64, KernelSU, 2026-10-28).
+wvc_is_changer() {
+    while IFS= read -r _x || [ -n "$_x" ]; do
+        case "$_x" in
+            name=*|author=*)
+                case "$_x" in
+                    *[Ww][Ee][Bb][Vv][Ii][Ee][Ww]\ [Cc][Hh][Aa][Nn][Gg][Ee][Rr]*|*[Ll][Oo][Rr][Dd][Ii][Ff][Yy]*) return 0 ;;
+                esac ;;
+        esac
+    done < "$1"
+    return 1
+}
 for d in /data/adb/modules/*; do
     [ -f "$d/module.prop" ] || continue
     [ "${d##*/}" = "$WVC_ID" ] && continue
     [ -f "$d/remove" ] && continue
-    if grep -qiE '^(name|author)=.*(WebView Changer|Lordify)' "$d/module.prop"; then
+    if wvc_is_changer "$d/module.prop"; then
         abort "$(m "! Başka bir WebView Changer modülü kurulu: ${d##*/}. Önce onu kaldırıp yeniden başlatın." "! Another WebView Changer module is installed: ${d##*/}. Remove it and reboot first.")"
     fi
 done
@@ -126,6 +140,16 @@ echo "$APKS" | while IFS= read -r f; do
                 ui_print "$(m "  Not: Cromite stok AOSP WebView'ın ($sp) güncellemesi olarak kurulur;" "  Note: Cromite installs as an update of the stock AOSP WebView ($sp);")"
                 ui_print "$(m "  stok WebView listeden çıkar, geri dönmek için Cromite kaldırılır." "  the stock WebView leaves the list; uninstall Cromite to go back.")" ;;
         esac
+    fi
+    # Ayni dosya zaten kuruluysa yeniden kurma: etkin WebView paketini yeniden
+    # kurmak onu kullanan uygulamalari kapatir; MuMu'da (Android 15) system_server'i
+    # cokertip yeniden baslatiyor (PinnerService.getWebviewPinQuota NPE, 2026-10-28).
+    ip=$(pm path "$p" 2>/dev/null | sed -n 's/^package://p' | grep 'base.apk$' | head -1)
+    if [ -n "$ip" ] && [ "$(stat -c %s "$ip" 2>/dev/null)" = "$(stat -c %s "$f")" ] && cmp -s "$ip" "$f"; then
+        ui_print "$(m "  Aynı dosya zaten kurulu:" "  The same file is already installed:") $(wvc_version "$p"). $SKIP"
+        echo "$p data" >> "$TRIED"
+        grep -qE "^$p (data|system)" "$LIST" || echo "$p data" >> "$LIST"
+        continue
     fi
     ui_print "$(m "  Kuruluyor..." "  Installing...")"
     out=$(wvc_pm_install "$f")
